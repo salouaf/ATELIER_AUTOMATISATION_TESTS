@@ -17,19 +17,43 @@
             display: block; margin: 20px auto; padding: 10px 20px;
             font-size: 16px; cursor: pointer; background: #238636; color: white; border: none; border-radius: 5px;
         }
-        #last-image { display: block; margin: 20px auto; max-width: 300px; border-radius: 12px; }
+        table {
+            width: 90%; margin: 20px auto; border-collapse: collapse; background: #161b22;
+        }
+        th, td { border: 1px solid #30363d; padding: 8px; }
+        th { background-color: #21262d; }
+        tr:nth-child(even) { background-color: #0d1117; }
     </style>
 </head>
 <body>
-    <h1>Dashboard API Tests - Foodish</h1>
+    <h1>Dashboard API Tests</h1>
 
     <button id="run-tests-btn">Lancer les tests</button>
 
-    <img id="last-image" src="{{ last_image }}" alt="Plat du dernier test">
-
+    <!-- Graphique -->
     <div id="chart-container">
         <canvas id="testsChart"></canvas>
     </div>
+
+    <!-- Tableau -->
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Timestamp</th>
+            <th>Passed</th>
+            <th>Failed</th>
+            <th>Latency (ms)</th>
+        </tr>
+        {% for r in runs %}
+        <tr>
+            <td>{{ r[0] }}</td>
+            <td>{{ r[1] }}</td>
+            <td>{{ r[2] }}</td>
+            <td>{{ r[3] }}</td>
+            <td>{{ r[4]|round(2) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 
     <script>
         // Bouton lancer les tests
@@ -38,13 +62,13 @@
             fetch('/run-tests')
                 .then(r => r.json())
                 .then(data => { 
-                    alert(`Tests terminés : ${data.summary.passed} passés, ${data.summary.failed} échoués`);
+                    alert(`Tests terminés : ${data.passed} passés, ${data.failed} échoués`);
                     location.reload(); 
                 })
                 .catch(e => { alert('Erreur'); console.error(e); this.disabled=false; this.textContent='Lancer les tests'; });
         }
 
-        // Chart.js graphique animé simple
+        // Chart.js graphique simple
         const ctx = document.getElementById('testsChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
