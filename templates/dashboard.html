@@ -3,106 +3,74 @@
 <head>
     <title>Dashboard API Tests</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" 
-        href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        h1 { text-align: center; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        td, th { text-align: center; padding: 8px; }
-        .PASS { background-color: #c8e6c9; font-weight: bold; }
-        .FAIL { background-color: #ffcccb; font-weight: bold; }
-        #run-tests-btn { margin-bottom: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
-        #chart-container { width: 80%; margin: auto; margin-top: 40px; }
-        #last-image { display: block; margin: 20px auto; max-width: 400px; border-radius: 12px; }
+        body {
+            background: linear-gradient(to bottom, #0d1117, #161b22);
+            color: #c9d1d9;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 0;
+        }
+        h1 { text-align: center; margin: 20px 0; }
+        #chart-container { width: 90%; margin: auto; height: 400px; }
+        #run-tests-btn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; cursor: pointer; background: #238636; color: white; border: none; border-radius: 5px; }
+        #last-image { display: block; margin: 20px auto; max-width: 300px; border-radius: 12px; }
     </style>
 </head>
 <body>
-    <h1>Dashboard API Tests</h1>
+    <h1>Dashboard API Tests - Foodish</h1>
 
-    <!-- Bouton pour lancer les tests -->
     <button id="run-tests-btn">Lancer les tests</button>
+
+    <!-- Dernière image -->
+    <img id="last-image" src="{{ last_image }}" alt="Plat du dernier test">
 
     <!-- Graphique -->
     <div id="chart-container">
         <canvas id="testsChart"></canvas>
     </div>
 
-    <!-- Dernière image du plat -->
-    <img id="last-image" src="{{ last_image }}" alt="Plat du dernier test">
-
-    <!-- Tableau -->
-    <table id="tests-table" class="display">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Timestamp</th>
-                <th>Passed</th>
-                <th>Failed</th>
-                <th>Avg Latency (ms)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in runs %}
-            <tr class="{{ 'PASS' if r[3]==0 else 'FAIL' }}">
-                <td>{{ r[0] }}</td>
-                <td>{{ r[1] }}</td>
-                <td>{{ r[2] }}</td>
-                <td>{{ r[3] }}</td>
-                <td>{{ r[4]|round(2) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
     <script>
-        $(document).ready( function () {
-            $('#tests-table').DataTable({"order": [[0, "desc"]], "pageLength": 10});
+        // Bouton lancer les tests
+        document.getElementById('run-tests-btn').onclick = function() {
+            this.disabled = true; this.textContent = 'Tests en cours...';
+            fetch('/run-tests')
+                .then(r=>r.json())
+                .then(data=>{ alert(`Tests terminés : ${data.summary.passed} passés, ${data.summary.failed} échoués`); location.reload(); })
+                .catch(e=>{ alert('Erreur'); console.error(e); this.disabled=false; this.textContent='Lancer les tests'; });
+        }
 
-            // Bouton Lancer les tests
-            $('#run-tests-btn').click(function() {
-                $(this).prop('disabled', true).text('Tests en cours...');
-                fetch('/run-tests')
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(`Tests terminés : ${data.summary.passed} passés, ${data.summary.failed} échoués`);
-                        location.reload();
-                    })
-                    .catch(err => {
-                        alert('Erreur lors de l\'exécution des tests');
-                        console.error(err);
-                        $(this).prop('disabled', false).text('Lancer les tests');
-                    });
-            });
-
-            // --- Graphique Chart.js ---
-            const ctx = document.getElementById('testsChart').getContext('2d');
-            const chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: [{% for r in runs %}"{{ r[0] }}",{% endfor %}],
-                    datasets: [{
-                        label: 'Passed',
-                        data: [{% for r in runs %}{{ r[2] }},{% endfor %}],
-                        backgroundColor: 'rgba(75, 192, 192, 0.7)'
-                    },{
-                        label: 'Failed',
-                        data: [{% for r in runs %}{{ r[3] }},{% endfor %}],
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
-                    }]
+        // Chart.js graphique animé
+        const ctx = document.getElementById('testsChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [{% for r in runs %}"{{ r[1] }}",{% endfor %}],
+                datasets: [{
+                    label: 'Passed',
+                    data: [{% for r in runs %}{{ r[2] }},{% endfor %}],
+                    borderColor: '#38b000',
+                    backgroundColor: 'rgba(56,176,0,0.3)',
+                    fill: true,
+                    tension: 0.4
+                },{
+                    label: 'Failed',
+                    data: [{% for r in runs %}{{ r[3] }},{% endfor %}],
+                    borderColor: '#ff4d6d',
+                    backgroundColor: 'rgba(255,77,109,0.3)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: 'white' } } },
+                scales: {
+                    x: { ticks: { color: 'white' }, grid: { color: '#30363d' } },
+                    y: { ticks: { color: 'white' }, grid: { color: '#30363d' } }
                 },
-                options: {
-                    responsive: true,
-                    animation: { duration: 1000 },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
-            });
+                animation: { duration: 1000 }
+            }
         });
     </script>
-
 </body>
 </html>
