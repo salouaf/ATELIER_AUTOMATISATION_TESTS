@@ -4,7 +4,6 @@ from flask import json
 from urllib.request import urlopen
 from werkzeug.utils import secure_filename
 import sqlite3
-import requests
 
 
 app = Flask(__name__)
