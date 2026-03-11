@@ -7,12 +7,16 @@
         body {
             background: linear-gradient(to bottom, #0d1117, #161b22);
             color: #c9d1d9;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: Arial, sans-serif;
+            text-align: center;
             margin: 0; padding: 0;
         }
-        h1 { text-align: center; margin: 20px 0; }
+        h1 { margin: 20px 0; }
         #chart-container { width: 90%; margin: auto; height: 400px; }
-        #run-tests-btn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; cursor: pointer; background: #238636; color: white; border: none; border-radius: 5px; }
+        #run-tests-btn {
+            display: block; margin: 20px auto; padding: 10px 20px;
+            font-size: 16px; cursor: pointer; background: #238636; color: white; border: none; border-radius: 5px;
+        }
         #last-image { display: block; margin: 20px auto; max-width: 300px; border-radius: 12px; }
     </style>
 </head>
@@ -21,10 +25,8 @@
 
     <button id="run-tests-btn">Lancer les tests</button>
 
-    <!-- Dernière image -->
     <img id="last-image" src="{{ last_image }}" alt="Plat du dernier test">
 
-    <!-- Graphique -->
     <div id="chart-container">
         <canvas id="testsChart"></canvas>
     </div>
@@ -34,12 +36,15 @@
         document.getElementById('run-tests-btn').onclick = function() {
             this.disabled = true; this.textContent = 'Tests en cours...';
             fetch('/run-tests')
-                .then(r=>r.json())
-                .then(data=>{ alert(`Tests terminés : ${data.summary.passed} passés, ${data.summary.failed} échoués`); location.reload(); })
-                .catch(e=>{ alert('Erreur'); console.error(e); this.disabled=false; this.textContent='Lancer les tests'; });
+                .then(r => r.json())
+                .then(data => { 
+                    alert(`Tests terminés : ${data.summary.passed} passés, ${data.summary.failed} échoués`);
+                    location.reload(); 
+                })
+                .catch(e => { alert('Erreur'); console.error(e); this.disabled=false; this.textContent='Lancer les tests'; });
         }
 
-        // Chart.js graphique animé
+        // Chart.js graphique animé simple
         const ctx = document.getElementById('testsChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
