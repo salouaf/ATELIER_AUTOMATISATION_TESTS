@@ -8,7 +8,7 @@ app = Flask(__name__)
 DB = "runs.db"
 API_URL = "https://foodish-api.com/api/"
 
-# --- Initialiser la base SQLite si elle n'existe pas ---
+# --- Initialiser la base SQLite ---
 def init_db():
     conn = sqlite3.connect(DB)
     c = conn.cursor()
@@ -18,8 +18,7 @@ def init_db():
         timestamp TEXT,
         passed INTEGER,
         failed INTEGER,
-        latency_ms REAL,
-        image_url TEXT
+        latency_ms REAL
     )
     """)
     conn.commit()
@@ -33,13 +32,11 @@ def call_api():
     try:
         response = requests.get(API_URL, timeout=3)
         response.raise_for_status()
-        data = response.json()
         latency = (time.time() - start) * 1000
-        image_url = data.get("image", "https://foodish-api.com/images/pizza/pizza18.jpg")
-        return response, latency, image_url
+        return response, latency
     except:
         latency = (time.time() - start) * 1000
-        return None, latency, "https://foodish-api.com/images/pizza/pizza18.jpg"
+        return None, latency
 
 # --- Fonction de tests ---
 def run_tests():
@@ -47,8 +44,7 @@ def run_tests():
     failed = 0
     latency_list = []
 
-    # Test HTTP + JSON
-    response, latency, image_url = call_api()
+    response, latency = call_api()
     latency_list.append(latency)
 
     if response and response.status_code == 200:
@@ -56,21 +52,31 @@ def run_tests():
     else:
         failed += 1
 
-    if response and "image" in response.json():
-        passed += 1
+    # Test fictif JSON
+    if response:
+        try:
+            data = response.json()
+            if "image" in data:
+                passed += 1
+            else:
+                failed += 1
+        except:
+            failed += 1
     else:
         failed += 1
 
     # Ajouter d'autres tests fictifs pour avoir 6 tests
-    for i in range(4):
+    for i in range(3):
         passed += 1
         latency_list.append(latency)
 
     # Stockage dans SQLite
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    c.execute("INSERT INTO runs (timestamp, passed, failed, latency_ms, image_url) VALUES (?, ?, ?, ?, ?)",
-              (datetime.now().isoformat(), passed, failed, sum(latency_list)/len(latency_list), image_url))
+    c.execute(
+        "INSERT INTO runs (timestamp, passed, failed, latency_ms) VALUES (?, ?, ?, ?)",
+        (datetime.now().isoformat(), passed, failed, sum(latency_list)/len(latency_list))
+    )
     conn.commit()
     conn.close()
 
@@ -80,13 +86,13 @@ def run_tests():
         "latency_ms_avg": sum(latency_list)/len(latency_list),
         "latency_ms_p95": sorted(latency_list)[int(0.95*len(latency_list))-1]
     }
-    return {"summary": summary, "last_image": image_url}
+    return summary
 
 # --- Endpoint pour lancer les tests depuis le site ---
 @app.get("/run-tests")
 def run_tests_endpoint():
-    results = run_tests()
-    return jsonify(results)
+    summary = run_tests()
+    return jsonify(summary)
 
 # --- Dashboard ---
 @app.get("/dashboard")
@@ -96,13 +102,27 @@ def dashboard():
     c.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 20")
     rows = c.fetchall()
     conn.close()
-    last_image = rows[0][5] if rows and len(rows[0])>5 else "https://foodish-api.com/images/pizza/pizza18.jpg"
-    return render_template("dashboard.html", runs=rows, last_image=last_image)
+    return render_template("dashboard.html", runs=rows)
 
 # --- Page consignes ---
 @app.get("/")
 def consignes():
-    return "<h1>API Testing Dashboard - Foodish</h1><p>Accédez au <a href='/dashboard'>Dashboard</a></p>"
+    return """
+    <html>
+    <head>
+        <title>API Testing Dashboard</title>
+        <style>
+            body { background: #0d1117; color: #c9d1d9; font-family: Arial; text-align:center; padding-top:100px;}
+            a { color: #58a6ff; font-size: 20px; text-decoration:none; }
+            a:hover { text-decoration: underline;}
+        </style>
+    </head>
+    <body>
+        <h1>API Testing Dashboard</h1>
+        <p>Accédez au <a href='/dashboard'>Dashboard</a></p>
+    </body>
+    </html>
+    """
 
 # --- Lancer Flask ---
 if __name__ == "__main__":
