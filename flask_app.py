@@ -17,7 +17,7 @@ def consignes():
 def plat_aleatoire():
     # Appel de l'API Foodish
     url = "https://foodish-api.com/api/"
-    response = requests.get(url)
+    response = request.get(url)
     
     # Vérifier que la requête a fonctionné
     if response.status_code != 200:
