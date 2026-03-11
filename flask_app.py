@@ -62,6 +62,16 @@ def run_tests():
     except AssertionError as e:
         return jsonify({"success": False, "error": str(e), "results": results})
 
+def test_http_status_and_type():
+    url = "https://foodish-api.com/api/"
+    try:
+        response = requests.get(url, timeout=3)
+        assert response.status_code == 200
+        assert response.headers["Content-Type"] == "application/json"
+        return {"name": "HTTP status & type", "status": "PASS"}
+    except Exception as e:
+        return {"name": "HTTP status & type", "status": "FAIL", "details": str(e)}
+
 # --- Lancer Flask ---
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
