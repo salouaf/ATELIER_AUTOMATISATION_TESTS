@@ -267,45 +267,12 @@ def run_tests():
 
 @app.get("/dashboard")
 def dashboard():
-
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-
     c.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 20")
-
     rows = c.fetchall()
-
     conn.close()
-
-    html = """
-    <h1>Dashboard API Tests</h1>
-
-    <table border=1>
-
-    <tr>
-        <th>ID</th>
-        <th>Timestamp</th>
-        <th>Passed</th>
-        <th>Failed</th>
-        <th>Avg Latency (ms)</th>
-    </tr>
-    """
-
-    for r in rows:
-
-        html += f"""
-        <tr>
-        <td>{r[0]}</td>
-        <td>{r[1]}</td>
-        <td>{r[2]}</td>
-        <td>{r[3]}</td>
-        <td>{round(r[4],2)}</td>
-        </tr>
-        """
-
-    html += "</table>"
-
-    return html
+    return render_template("dashboard.html", runs=rows)
 
 
 # -----------------------------
