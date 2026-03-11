@@ -272,8 +272,9 @@ def dashboard():
     c.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 20")
     rows = c.fetchall()
     conn.close()
-    return render_template("dashboard.html", runs=rows)
-
+    # Récupérer image du dernier test ou mettre image par défaut
+    last_image = rows[0][5] if rows and len(rows[0])>5 else "https://foodish-api.com/images/pizza/pizza18.jpg"
+    return render_template("dashboard.html", runs=rows, last_image=last_image)
 
 # -----------------------------
 # LANCER FLASK
